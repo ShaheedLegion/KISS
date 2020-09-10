@@ -19,8 +19,8 @@ import fr.neamar.kiss.utils.UserHandle;
  */
 public class PackageAddedRemovedHandler extends BroadcastReceiver {
 
-	public static void handleEvent(Context ctx, String action, String packageName, UserHandle user, boolean replacing) {
-		if (PreferenceManager.getDefaultSharedPreferences(ctx).getBoolean("enable-app-history", true)) {
+    public static void handleEvent(Context ctx, String action, String packageName, UserHandle user, boolean replacing) {
+        if (PreferenceManager.getDefaultSharedPreferences(ctx).getBoolean("enable-app-history", true)) {
             // Insert into history new packages (not updated ones)
             if ("android.intent.action.PACKAGE_ADDED".equals(action) && !replacing) {
                 // Add new package to history
@@ -29,36 +29,46 @@ public class PackageAddedRemovedHandler extends BroadcastReceiver {
                     return;
                 }
 
-				String className = launchIntent.getComponent().getClassName();
-				if (className != null) {
-					String pojoID = user.addUserSuffixToString("app://" + packageName + "/" + className, '/');
-                    KissApplication.getDataHandler(ctx).addToHistory(pojoID);
-                }
+                String className = launchIntent.getComponent().getClassName();
+                String pojoID = user.addUserSuffixToString("app://" + packageName + "/" + className, '/');
+                KissApplication.getApplication(ctx).getDataHandler().addToHistory(pojoID);
+                // Add shortcut
+                KissApplication.getApplication(ctx).getDataHandler().addShortcut(packageName);
             }
         }
 
         if ("android.intent.action.PACKAGE_REMOVED".equals(action) && !replacing) {
-            // Removed all installed shortcuts
-            KissApplication.getDataHandler(ctx).removeShortcuts(packageName);
-            KissApplication.getDataHandler(ctx).removeFromExcluded(packageName, user);
+            // Remove all installed shortcuts
+            KissApplication.getApplication(ctx).getDataHandler().removeShortcuts(packageName);
+            KissApplication.getApplication(ctx).getDataHandler().removeFromExcluded(packageName);
         }
 
-        KissApplication.resetIconsHandler(ctx);
+        KissApplication.getApplication(ctx).resetIconsHandler();
 
         // Reload application list
-        final AppProvider provider = KissApplication.getDataHandler(ctx).getAppProvider();
+        final AppProvider provider = KissApplication.getApplication(ctx).getDataHandler().getAppProvider();
         if (provider != null) {
             provider.reload();
         }
-	}
+    }
 
     @Override
     public void onReceive(Context ctx, Intent intent) {
-		handleEvent(ctx,
-				intent.getAction(),
-				intent.getData().getSchemeSpecificPart(), new UserHandle(),
-				intent.getBooleanExtra(Intent.EXTRA_REPLACING, false)
-		);
+
+        String packageName = intent.getData().getSchemeSpecificPart();
+
+        if (packageName.equalsIgnoreCase(ctx.getPackageName())) {
+            // When running KISS locally, sending a new version of the APK immediately triggers a "package removed" for fr.neamar.kiss,
+            // There is no need to handle this event.
+            // Discarding it makes startup time much faster locally as apps don't have to be loaded twice.
+            return;
+        }
+
+        handleEvent(ctx,
+                intent.getAction(),
+                packageName, new UserHandle(),
+                intent.getBooleanExtra(Intent.EXTRA_REPLACING, false)
+        );
 
     }
 

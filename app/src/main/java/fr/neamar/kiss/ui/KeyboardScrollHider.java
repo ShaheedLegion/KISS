@@ -14,10 +14,10 @@ import android.view.animation.AccelerateInterpolator;
 public class KeyboardScrollHider implements View.OnTouchListener {
     private final static int THRESHOLD = 24;
 
-    private KeyboardHandler handler;
-    private BlockableListView list;
-    private View listParent;
-    private BottomPullEffectView pullEffect;
+    private final KeyboardHandler handler;
+    private final BlockableListView list;
+    private final View listParent;
+    private final BottomPullEffectView pullEffect;
     private int listHeightInitial = 0;
 
     private float offsetYStart = 0;
@@ -29,14 +29,6 @@ public class KeyboardScrollHider implements View.OnTouchListener {
     private boolean resizeDone = false;
 
     private boolean scrollBarEnabled = true;
-
-    public interface KeyboardHandler {
-        void showKeyboard();
-
-        void hideKeyboard();
-
-        void applyScrollSystemUi();
-    }
 
     public KeyboardScrollHider(KeyboardHandler handler, BlockableListView list, BottomPullEffectView pullEffect) {
         this.handler = handler;
@@ -177,7 +169,7 @@ public class KeyboardScrollHider implements View.OnTouchListener {
                     animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
                         @Override
                         public void onAnimationUpdate(ValueAnimator animator) {
-                            int height = (int) (animator.getAnimatedValue());
+                            int height = (int) animator.getAnimatedValue();
                             KeyboardScrollHider.this.setListLayoutHeight(height);
                         }
                     });
@@ -221,16 +213,20 @@ public class KeyboardScrollHider implements View.OnTouchListener {
         return false;
     }
 
-    public void fixScroll()
-    {
-        this.list.post( new Runnable()
-        {
+    public void fixScroll() {
+        this.list.post(new Runnable() {
             @Override
-            public void run()
-            {
+            public void run() {
                 resizeDone = false;
                 handleResizeDone();
             }
-        } );
+        });
+    }
+
+    public interface KeyboardHandler {
+        void showKeyboard();
+        void hideKeyboard();
+
+        void applyScrollSystemUi();
     }
 }

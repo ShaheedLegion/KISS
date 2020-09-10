@@ -7,7 +7,6 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.os.Build;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -16,27 +15,23 @@ import java.util.Set;
 
 import fr.neamar.kiss.db.DBHelper;
 
-/**
- * Created by nmitsou on 13.10.16.
- */
-
 public class TagsHandler {
-    Context context;
+    private final Context context;
     //cached tags
-    private Map<String, String> tagsCache;
+    private final Map<String, String> tagsCache;
 
-    public TagsHandler(Context context) {
+    TagsHandler(Context context) {
         this.context = context;
         tagsCache = DBHelper.loadTags(this.context);
         addDefaultAliases();
     }
 
     public void setTags(String id, String tags) {
-        //remove existing tags for id
+        // remove existing tags for id
         DBHelper.deleteTagsForId(this.context, id);
-        //add to db
+        // add to db
         DBHelper.insertTagsForId(this.context, tags, id);
-        //add to cache
+        // add to cache
         tagsCache.put(id, tags);
     }
 
@@ -49,18 +44,21 @@ public class TagsHandler {
     }
 
     public String[] getAllTagsAsArray() {
+        Set<String> tags = getAllTagsAsSet();
+        return tags.toArray(new String[0]);
+    }
+
+    public Set<String> getAllTagsAsSet() {
         Set<String> tags = new HashSet<>();
-        String[] tagsNew;
         for (Map.Entry<String, String> entry : tagsCache.entrySet()) {
             tags.addAll(Arrays.asList(entry.getValue().split("\\s+")));
         }
-
-        return tags.toArray(new String[tags.size()]);
+        tags.remove("");
+        return tags;
     }
 
     private void addDefaultAliases() {
         final PackageManager pm = context.getPackageManager();
-        ArrayList alias = new ArrayList<>();
 
         String phoneApp = getApp(pm, Intent.ACTION_DIAL);
         if (phoneApp != null) {

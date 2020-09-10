@@ -1,61 +1,50 @@
 package fr.neamar.kiss.pojo;
+
 import fr.neamar.kiss.utils.UserHandle;
 
-import android.util.Pair;
+public final class AppPojo extends PojoWithTags {
 
-import fr.neamar.kiss.normalizer.StringNormalizer;
-
-public class AppPojo extends Pojo {
-    public String packageName;
-    public String activityName;
-    public UserHandle userHandle;
-
-    // Tags normalized
-    public String tagsNormalized;
-    // Array that contains the non-normalized positions for every normalized
-    // character entry
-    private int[] tagsPositionMap = null;
-
-    public void setTags(String tags) {
-    // Set the actual user-friendly name
-        this.tags = tags;
-
-        if (this.tags != null) {
-            this.tags = this.tags.replaceAll("<", "&lt;");
-            // Normalize name for faster searching
-            Pair<String, int[]> normalized = StringNormalizer.normalizeWithMap(this.tags);
-            this.tagsNormalized = normalized.first;
-            this.tagsPositionMap = normalized.second;
-        }
+    public static String getComponentName(String packageName, String activityName,
+                                          UserHandle userHandle) {
+        return userHandle.addUserSuffixToString(packageName + "/" + activityName, '#');
     }
 
-    public void setTagHighlight(int positionStart, int positionEnd) {
-        int posStart = this.mapTagsPosition(positionStart);
-        int posEnd = this.mapTagsPosition(positionEnd);
+    public final String packageName;
+    public final String activityName;
+    public final UserHandle userHandle;
 
-        this.displayTags = this.tags.substring(0, posStart)
-                + '{' + this.tags.substring(posStart, posEnd) + '}' + this.tags.substring(posEnd, this.tags.length());
+    private boolean excluded;
+    private boolean excludedFromHistory;
+
+    public AppPojo(String id, String packageName, String activityName, UserHandle userHandle,
+                   boolean isExcluded, boolean isExcludedFromHistory) {
+        super(id);
+
+        this.packageName = packageName;
+        this.activityName = activityName;
+        this.userHandle = userHandle;
+
+        this.excluded = isExcluded;
+        this.excludedFromHistory = isExcludedFromHistory;
     }
 
-    /**
-     * Map a position in the normalized name to a position in the standard name string
-     *
-     * @param position Position in normalized name
-     * @return Position in non-normalized string
-     */
-    public int mapTagsPosition(int position) {
-        if (this.tagsPositionMap != null) {
-            if (position < this.tagsPositionMap.length) {
-                return this.tagsPositionMap[position];
-            }
-            return this.tags.length();
-        } else {
-            // No mapping defined
-            if (position < this.tags.length()) {
-                return position;
-            }
-            return this.tags.length();
-        }
+    public String getComponentName() {
+        return getComponentName(packageName, activityName, userHandle);
     }
 
+    public boolean isExcluded() {
+        return excluded;
+    }
+
+    public void setExcluded(boolean excluded) {
+        this.excluded = excluded;
+    }
+
+    public boolean isExcludedFromHistory() {
+        return excludedFromHistory;
+    }
+
+    public void setExcludedFromHistory(boolean excludedFromHistory) {
+        this.excludedFromHistory = excludedFromHistory;
+    }
 }
